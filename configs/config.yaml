@@ -1,0 +1,92 @@
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  external_dir: "data/external"
+  checkpoints_dir: "checkpoints"
+  logs_dir: "logs"
+  kaggle_dataset: "borismarjanovic/price-volume-data-for-all-us-stocks-etfs"
+  min_rows: 500
+  required_columns: ["Open", "High", "Low", "Close", "Volume"]
+  etf_tickers: ["SPY.US", "QQQ.US", "IWM.US"]
+  vix_ticker: "^VIX"
+
+
+dataset:
+  seq_len: 60
+  pretrain_tickers: null
+  finetune_tickers: "AAPL.US"
+  val_split: 0.05
+  batch_size_pre_train: 4 #since i am training on my local cpu
+  batch_size_fine_tune: 4
+  num_workers: 2 #this will be set in the dataloader using os.cpu_count()
+
+features:
+  rsi_periods: [7,14]
+  macd_params:
+    standard: [12,26,9]
+    short: [3,10,16]
+  atr_periods: 14
+  bb_periods: [14,21]
+  bb_num_std: 2.0
+  stoch_period: 14
+  parkinson_period: 21
+  vol_windows: [5,21,63]
+  use_grach: true
+  garch_ewma_alpha: 0.06
+  beta_window: 63
+  direction_adaptive_factor: 0.7 #threshold = factor * Real_Vol_21d
+
+model:
+  d_model: 512
+  n_heads: 16
+  n_layers: 8
+  d_ff: 2048 #hidden dim size
+  max_seq_len: 252
+  dropout: 0.1
+
+pre_training:
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  epochs: 20
+  grad_clip_norm: 1.0
+  lr_scheduler: "cosine"
+  early_stopping_patience: 3
+  log_interval: 100
+  lambda_price: 1.0
+  lambda_dir: 0.5
+  lambda_vol: 0.5
+  logvar_clamp_min: -10
+  logvar_clamp_max: 5
+  use_amp: false
+  checkpoint_name: "best.pth"
+
+fine_tuning:
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  epochs: 10
+  grad_clip_norm: 1.0
+  lr_scheduler: "cosine"
+  early_stopping_patience: 3
+  log_interval: 50
+  lambda_price: 1.0
+  lambda_dir: 0.5
+  lambda_vol: 0.5
+  logvar_clamp_min: -10
+  logvar_clamp_max: 5
+  use_lora: true
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  lora_target_modules: ["W_q","W_k","W_v","W_o"]
+  checkpoint_name: "finetuned.pt"
+
+inference:
+  forecast_horizon: 21
+  output_dir: "results"
+
+logging:
+  level: "INFO"
+  log_file: "app.log"
+  use_mlflow: true
+  mlflow_tracking_uri: "http://localhost:8000"
+  experiment_name: "stock_transformer"
