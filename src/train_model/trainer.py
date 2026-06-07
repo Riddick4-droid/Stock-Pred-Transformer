@@ -50,15 +50,15 @@ class TrainerBase:
         logger.info(f"{mode}: train={len(self.train_dataset)}, val={len(self.val_dataset)}")
 
         num_features = len(self.feature_cols)
-        model_cfg = self.cfg["model"]
+        self.model_cfg = self.cfg["model"]
         self.model = StockTransformer(
             num_features=num_features,
-            d_model=model_cfg["d_model"],
-            n_heads=model_cfg["n_heads"],
-            n_layers=model_cfg["n_layers"],
-            d_ff=model_cfg["d_ff"],
-            max_seq_len=model_cfg["max_seq_len"],
-            dropout=model_cfg["dropout"]
+            d_model=self.model_cfg["d_model"],
+            n_heads=self.model_cfg["n_heads"],
+            n_layers=self.model_cfg["n_layers"],
+            d_ff=self.model_cfg["d_ff"],
+            max_seq_len=self.model_cfg["max_seq_len"],
+            dropout=self.model_cfg["dropout"]
         ).to(self.device)
 
         #loss and optimizer
@@ -176,33 +176,33 @@ class TrainerBase:
         return total_loss / len(dataloader)
     
 
-    def run(self,):
+    def train(self):
         self.current_epoch = 0
         best_val = float("inf")
         epochs = self.train_cfg["epochs"]
 
         if self.cfg["logging"].get("use_mlflow", False):
-            mlflow.start_run(run_name=f"{self.mode}_{self.cfg['dataset'].get('finetune_tickers','all')}")
+            mlflow.start_run(run_name=f"{self.mode}_{self.cfg['dataset'].get('finetune_tickers','all')} ")
             # Log all relevant config sections as parameters
             mlflow.log_params({
-                    # Model
+                    # Model configs
                     "d_model": self.model_cfg["d_model"],
                     "n_heads":  self.model_cfg["n_heads"],
                     "n_layers":  self.model_cfg["n_layers"],
                     "d_ff":  self.model_cfg["d_ff"],
                     "dropout":  self.model_cfg["dropout"],
-                    # Training
+                    # Training configs
                     "lr": self.train_cfg["lr"],
                     "weight_decay": self.train_cfg.get("weight_decay", 0),
                     "epochs": self.train_cfg["epochs"],
                     "batch_size": self.ds_cfg.get("batch_size_pre_train",2),
                     "seq_len": self.cfg["dataset"]["seq_len"],
                     "grad_clip_norm": self.train_cfg.get("grad_clip_norm", 1.0),
-                    # Loss weights
+                    # Loss weights configs
                     "lambda_price": self.train_cfg.get("lambda_price", 1.0),
                     "lambda_dir": self.train_cfg.get("lambda_dir", 0.5),
                     "lambda_vol": self.train_cfg.get("lambda_vol", 0.5),
-                    # Mode specifics
+                    # Mode specifics configs
                     "mode": self.mode,
                     "ticker": self.cfg["dataset"].get("finetune_tickers", "all") if self.mode == "fine_tuning" else "all"
                 })

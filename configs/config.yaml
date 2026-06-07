@@ -47,7 +47,7 @@ model:
 pre_training:
   lr: 3.0e-4
   weight_decay: 1.0e-4
-  epochs: 10
+  epochs: 5
   grad_clip_norm: 1.0
   lr_scheduler: "cosine"
   early_stopping_patience: 3
@@ -63,7 +63,7 @@ pre_training:
 fine_tuning:
   lr: 1.0e-4
   weight_decay: 1.0e-4
-  epochs: 10
+  epochs: 5
   grad_clip_norm: 1.0
   lr_scheduler: "cosine"
   early_stopping_patience: 3

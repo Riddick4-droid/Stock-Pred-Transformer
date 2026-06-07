@@ -84,7 +84,7 @@ def main():
     elif args.command == "pretrain":
         logger.info("Starting pretraining...")
         trainer = PreTrainer(config_path=args.config)
-        trainer.run()
+        trainer.train()
         logger.info("Pre‑training finished.")
 
     elif args.command == "finetune":
