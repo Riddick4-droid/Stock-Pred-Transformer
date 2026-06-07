@@ -224,18 +224,35 @@ def engineer_features(
 
     #VIX
     if vix_df is not None:
-        #build a clean daily vix series with a sample datetimeindex
+        # Create a clean 1‑D VIX series regardless of column structure
         vix_series = vix_df.copy()
 
+        # Flatten multi‑level columns (if any) – pick the VIX column by name or fallback
+        if isinstance(vix_series.columns, pd.MultiIndex):
+            # The column we want is the one containing 'VIX' in its last level
+            vix_col = [c for c in vix_series.columns if 'VIX' in c]
+            if vix_col:
+                vix_series = vix_series[vix_col[0]]
+            else:
+                vix_series = vix_series.iloc[:, -1]
+        elif 'VIX' in vix_series.columns:
+            vix_series = vix_series['VIX']
+        else:
+            vix_series = vix_series.iloc[:, -1]
+
+        # Ensure we now have a Series (1‑D)
+        if isinstance(vix_series, pd.DataFrame):
+            vix_series = vix_series.squeeze()
+        if not isinstance(vix_series, pd.Series):
+            raise StockTransformerException("Failed to extract 1‑D VIX series.")
+
+        # Flatten index if needed
         if isinstance(vix_series.index, pd.MultiIndex):
             vix_series.index = vix_series.index.get_level_values(0)
         vix_series.index = pd.to_datetime(vix_series.index)
-
-        if "VIX" in vix_series.columns:
-            vix_series = vix_series["VIX"]
-        else:
-            vix_series = vix_series.iloc[:,-1]
         vix_series = vix_series.sort_index()
+
+        # Map onto the stock’s dates
         data["VIX"] = data.index.to_series().map(vix_series)
     else:
         data["VIX"] = np.nan

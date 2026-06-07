@@ -16,8 +16,8 @@ dataset:
   pretrain_tickers: null
   finetune_tickers: "AAPL.US"
   val_split: 0.05
-  batch_size_pre_train: 4 #since i am training on my local cpu
-  batch_size_fine_tune: 4
+  batch_size_pre_train: 2 #since i am training on my local cpu
+  batch_size_fine_tune: 2
   num_workers: 2 #this will be set in the dataloader using os.cpu_count()
 
 features:
@@ -47,7 +47,7 @@ model:
 pre_training:
   lr: 3.0e-4
   weight_decay: 1.0e-4
-  epochs: 20
+  epochs: 10
   grad_clip_norm: 1.0
   lr_scheduler: "cosine"
   early_stopping_patience: 3

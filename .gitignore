@@ -216,3 +216,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#Datasets
+data/raw/
+data/processed/
+data/external/
+
+#Model weights
+*.pth
+
+#other large model files
+*.pt
+*.ckpt
+
+#Training checkpoints
+checkpoints/
+
+# Cache
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# MLflow
+mlruns/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.venv/
+venv/
+env/
+
+# IDE files
+.vscode/
+.idea/

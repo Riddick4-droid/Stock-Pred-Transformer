@@ -163,3 +163,17 @@ def save_json(data: Dict[str,Any], path:str)->None:
 def load_json(path: str)->Dict[str,Any]:
     with open(path, "r") as f:
         return json.load(f)
+    
+def get_model_info(model:nn.Module):
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    non_trainable_params = total_params - trainable
+    model_size = sum(
+        p.numel() * p.element_size() for p in model.parameters()
+    ) / (1024 ** 2)
+    return {
+        "total_parameters": total_params,
+        "trainable_parameters": trainable,
+        "non_trainable_parameters": non_trainable_params,
+        "model_size_mb": round(model_size, 2)
+    }

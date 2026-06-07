@@ -55,7 +55,13 @@ def fit_and_save_scaler(
         total += len(df)
     if not combined:
         raise StockTransformerException("No data to fit scaler")
+    #data = np.concatenate(combined, axis=0)[:sample_size]
     data = np.concatenate(combined, axis=0)[:sample_size]
+    # Remove rows that contain infinity or NaN (safety net)
+    finite_mask = np.isfinite(data).all(axis=1)
+    data = data[finite_mask]
+    if len(data) == 0:
+        raise StockTransformerException("All sampled data rows contain non‑finite values.")
     scaler.fit(data)
     Path(scaler_path).parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"scaler":scaler, "feature_cols":feature_cols},scaler_path)
@@ -129,6 +135,10 @@ class PreTrainingDataset(Dataset):
 
         arr = self.data[ticker]
         x = arr[start:start + self.seq_len, self.feature_indices].copy()
+
+        # Replace inf / NaN with safe finite values
+        x = np.nan_to_num(x, nan=0.0, posinf=1e9, neginf=-1e9)
+
         if self.scaler is not None:
             x = self.scaler.transform(x)
         y = arr[start + self.seq_len, self.target_idx]
@@ -175,7 +185,10 @@ class FineTuneDataset(Dataset):
         return self.valid_length
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        x = self.features[idx:idx + self.seq_len]
+        x = self.features[idx:idx + self.seq_len].copy()
+        x = np.nan_to_num(x, nan=0.0, posinf=1e9, neginf=-1e9)
+        if self.scaler is not None:
+            x = self.scaler.transform(x)
         return (
             torch.from_numpy(x).float(),
             torch.tensor(self.price_target[idx + self.seq_len], dtype=torch.float32),
@@ -195,7 +208,7 @@ def create_datasets(config_path: str = "configs/config.yaml",mode: str = "pretra
 
     processed_dir = data_cfg["processed_dir"]
     seq_len = ds_cfg["seq_len"]
-    fine_tune_ticker = ds_cfg["fine_tune_ticker"]
+    fine_tune_ticker = ds_cfg["finetune_tickers"]
 
     # Load or fit scaler, retrieving the feature columns
     scaler_path = "checkpoints/scaler.joblib"
